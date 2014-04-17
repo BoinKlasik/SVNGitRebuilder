@@ -1,7 +1,16 @@
 package main;
 
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.zip.InflaterInputStream;
+
+import org.apache.commons.codec.binary.Hex;
+import org.apache.commons.io.IOUtils;
 
 public class Util
 {
@@ -22,53 +31,34 @@ public class Util
 
 	public static String digest(String s)
 	{
-		return binToHex(SHA1_DIGEST.digest(s.getBytes()));
+		return Hex.encodeHexString(SHA1_DIGEST.digest(s.getBytes()));
 	}
 
-	/**
-	 * Converts a byte array to its readable string equivalent, useful for the results of hashes performed or converting Tree hash values into usable directory
-	 * strings.
-	 *
-	 * @param b byte array to convert
-	 * @return byte array converted to its string "equivalent"
-	 */
-	public static String binToHex(byte [] b)
+	public static String digest(ByteArrayOutputStream s)
 	{
-		final char [] digits = "0123456789abcdef".toCharArray();
-		final StringBuilder result = new StringBuilder();
-		for (byte element : b)
+		return digest(s.toString());
+	}
+
+	public static String digestObjectFile(File f) throws IOException
+	{
+		final InputStream in = new InflaterInputStream(new FileInputStream(f));
+		final ByteArrayOutputStream out = new ByteArrayOutputStream();
+
+		IOUtils.copy(in, out);
+
+		return Util.digest(out);
+
+	}
+
+	public static boolean validHash(String h)
+	{
+		try
 		{
-			result.append(digits[(element & 0xF0) >>> 4]);
-			result.append(digits[element & 0xF]);
+			return h.matches("[0-9a-f]{40}");
 		}
-		return result.toString();
-	}
-
-	public static String asciiToHex(String s)
-	{
-		return binToHex(s.getBytes());
-	}
-
-	public static byte [] hexToBin(String hex)
-	{
-		if (hex.length() % 2 != 0)
+		catch (RuntimeException re)
 		{
-			throw new RuntimeException("Invalid hex length: " + hex.length());
+			return false;
 		}
-
-		final byte [] output = new byte [hex.length() >> 1];
-		final char [] hchars = hex.toCharArray();
-
-		for (int i = 0, j = 0; j < hchars.length; i++)
-		{
-			output[i] = (byte) ((Character.digit(hchars[j++], 16) << 4 | Character.digit(hchars[j++], 16)) & 0xFF);
-		}
-
-		return output;
-	}
-
-	public static String hexToAscii(String ascii)
-	{
-		return new String(hexToBin(ascii));
 	}
 }

@@ -10,11 +10,12 @@ public class Main
 	/**
 	 * @param args
 	 */
-	public static void main(String [] args)
+	public static void main(String[] args)
 	{
 		if (args.length < 3)
 		{
 			usage();
+			return;
 		}
 		if (args[0].length() != 40)
 		{

@@ -10,7 +10,7 @@ public class Main
 	/**
 	 * @param args
 	 */
-	public static void main(String[] args)
+	public static void main(String [] args)
 	{
 		if (args.length < 3)
 		{
@@ -43,10 +43,12 @@ public class Main
 	 */
 	public static String byteArrayToHexString(byte [] b)
 	{
-		StringBuilder result = new StringBuilder();
+		final char [] digits = "0123456789abcdef".toCharArray();
+		final StringBuilder result = new StringBuilder();
 		for (byte element : b)
 		{
-			result.append(Integer.toString((element & 0xff) + 0x100, 16).substring(1));
+			result.append(digits[(element & 0xF0) >>> 4]);
+			result.append(digits[element & 0xF]);
 		}
 		return result.toString();
 	}

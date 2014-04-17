@@ -32,4 +32,21 @@ public class Main
 		System.out.println("2) Path to source repo");
 		System.out.println("3) Path to target repo");
 	}
+
+	/**
+	 * Converts a byte array to its readable string equivalent, useful for the results of hashes performed or converting Tree hash values into usable directory
+	 * strings.
+	 * 
+	 * @param b byte array to convert
+	 * @return byte array converted to its string "equivalent"
+	 */
+	public static String byteArrayToHexString(byte [] b)
+	{
+		StringBuilder result = new StringBuilder();
+		for (byte element : b)
+		{
+			result.append(Integer.toString((element & 0xff) + 0x100, 16).substring(1));
+		}
+		return result.toString();
+	}
 }

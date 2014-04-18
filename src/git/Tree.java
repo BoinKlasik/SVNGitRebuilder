@@ -1,19 +1,33 @@
 package git;
 
-public class Tree extends GitObject
-{
+import java.util.List;
 
-	public Tree(String substring)
+public class Tree extends Commitable
+{
+	List<Commitable> thingsInTree;
+
+	public Tree(String commitNumber)
 	{
-		if (substring.length() != 40)
-		{
-			System.out.println("Invalid hash");
-		}
-		System.out.println("Tree: " + substring);
+		super(commitNumber);
+		System.out.println("Tree: " + commitNumber);
 	}
 
 	@Override
 	public String reSave()
+	{
+		// TODO Auto-generated method stub
+		return "0";
+	}
+
+	@Override
+	public String getNewHash()
+	{
+		// TODO Auto-generated method stub
+		return "0";
+	}
+
+	@Override
+	public String getOldHash()
 	{
 		// TODO Auto-generated method stub
 		return null;

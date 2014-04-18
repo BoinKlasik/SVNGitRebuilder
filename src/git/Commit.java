@@ -1,11 +1,11 @@
 package git;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
+import main.Main;
 import main.Util;
 
 public class Commit extends GitObject
@@ -17,6 +17,7 @@ public class Commit extends GitObject
 	private Tree tree;
 	private List<Commit> parents;
 	private String footer;
+	private String newCommitNumber;
 
 	//@formatter:off
 	/**
@@ -32,41 +33,38 @@ public class Commit extends GitObject
 	//@formatter:on
 	private Commit(String commitNumber)
 	{
-		if (commitNumber.length() != 40)
-		{
-			System.out.println("Commit: Invalid hash length");
-		}
-		List<Commit> parents = new ArrayList<Commit>();
+		super(commitNumber);
+		oldCommitNumber = commitNumber;
+		parents = new ArrayList<Commit>();
 		oldCommits.put(commitNumber, this);
+		String commitString;
 		try
 		{
-			String path = getSourcePath(commitNumber);
-			File file = new File(path);
-
-			String commitString = loadFileFromHash(file);
-			String [] splitString = commitString.split("\n");
-
-			int startOfHash = commitString.indexOf('\0') + 6;
-			tree = new Tree(splitString[0].substring(startOfHash));
-			int parentsIndex = 1;
-			while (splitString[parentsIndex].startsWith("parent"))
-			{
-				parents.add(getCommit(splitString[parentsIndex++].substring(7)));
-			}
-
-			StringBuilder remainder = new StringBuilder();
-			for (int i = parentsIndex; i < splitString.length; i++)
-			{
-				remainder.append(splitString[i] + "\n");
-			}
-			footer = remainder.toString();
-
-			System.out.println("Loaded Commit: " + Util.digestObjectFile(file));
+			commitString = loadFileFromHash(commitNumber);
 		}
 		catch (IOException e)
 		{
 			e.printStackTrace();
+			return;
 		}
+		String [] splitString = commitString.split("\n");
+
+		int startOfHash = commitString.indexOf('\0') + 6;
+		tree = new Tree(splitString[0].substring(startOfHash));
+		int parentsIndex = 1;
+		while (splitString[parentsIndex].startsWith("parent"))
+		{
+			parents.add(getCommit(splitString[parentsIndex++].substring(7)));
+		}
+
+		StringBuilder remainder = new StringBuilder();
+		for (int i = parentsIndex; i < splitString.length; i++)
+		{
+			remainder.append(splitString[i] + "\n");
+		}
+		footer = remainder.toString();
+
+		System.out.println("Loaded Commit: " + commitNumber);
 	}
 
 	public static Commit getCommit(String commitNumber)
@@ -82,10 +80,47 @@ public class Commit extends GitObject
 	}
 
 	@Override
-	public String reSave()
+	protected String reSave()
 	{
+		StringBuilder sb = new StringBuilder();
 		String newTreeHash = tree.reSave();
 		String [] newParentHashes = new String [parents.size()];
-		return null;
+		for (int i = 0; i < parents.size(); i++)
+		{
+			String string = parents.get(i).getNewHash();
+			newParentHashes[i] = string;
+		}
+		sb.append("tree " + newTreeHash + "\n");
+		for (String s : newParentHashes)
+		{
+			sb.append("parent " + s + "\n");
+		}
+		sb.append(footer);
+		sb.insert(0, "commit " + sb.length() + '\0');
+		String newCommitContents = sb.toString();
+		String newHash = Util.digest(newCommitContents);
+		System.out.println(oldCommitNumber + " -> " + newHash);
+		if (Main.leaves.contains(oldCommitNumber))
+		{
+			System.out.println(newCommitContents);
+		}
+		//saveFileFromHash(newHash, newCommitContents);
+		return newHash;
+	}
+
+	@Override
+	public String getNewHash()
+	{
+		if (newCommitNumber == null)
+		{
+			newCommitNumber = reSave();
+		}
+		return newCommitNumber;
+	}
+
+	@Override
+	public String getOldHash()
+	{
+		return oldCommitNumber;
 	}
 }

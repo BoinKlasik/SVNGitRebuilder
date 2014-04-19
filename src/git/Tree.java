@@ -1,36 +1,136 @@
 package git;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+
+import main.ByteWrapper;
+import main.Util;
+
+import org.apache.commons.codec.binary.Hex;
 
 public class Tree extends Commitable
 {
+	public static HashMap<String, Tree> oldTrees = new HashMap<String, Tree>();
+	public static int TREE_MODE = 40000;
+
 	List<Commitable> thingsInTree;
 
+	/*
+	 * tree 500\0<mode> <filename>\0hash{20}mode...
+	 */
 	public Tree(String commitNumber)
 	{
 		super(commitNumber);
 		System.out.println("Tree: " + commitNumber);
+		thingsInTree = new ArrayList<>();
+		mode = TREE_MODE; //trees are always mode 40000 unless they are commit Trees (which will never reference this number)
+		oldTrees.put(commitNumber, this);
+
+		byte [] treeString;
+		try
+		{
+			//gotta load bytes because Strings dont work with the decoded hashes in tree files \o/ encoding
+			treeString = loadBytesfromHash(commitNumber);
+		}
+		catch (IOException e)
+		{
+			e.printStackTrace();
+			return;
+		}
+		ByteWrapper byteWrapper = new ByteWrapper(treeString);
+
+		//ignore header, read commitables after that
+		int readPosition = byteWrapper.indexOf('\0') + 1;
+		int spacePosition;
+
+		while ((spacePosition = byteWrapper.indexOf(' ', readPosition)) != -1 && spacePosition > readPosition)
+		{
+			Commitable commitable;
+			String modeString = new String(byteWrapper.subBytes(readPosition, spacePosition));
+			int commitableMode = Integer.valueOf(modeString);
+			readPosition = byteWrapper.indexOf('\0', spacePosition);
+			String name = new String(byteWrapper.subBytes(spacePosition + 1, readPosition));
+			byte [] hashCode = byteWrapper.subBytes(readPosition + 1, readPosition + 21);
+			String hashString = new String(Hex.encodeHex(hashCode));
+			if (commitableMode == TREE_MODE)
+			{
+				commitable = getTree(hashString, name);
+			}
+			else
+			{
+				commitable = Blob.getBlob(hashString, commitableMode, name);
+			}
+
+			readPosition += 21;
+			thingsInTree.add(commitable);
+		}
 	}
+
+	public Tree(String commitNumber, String folderName)
+	{
+		this(commitNumber);
+		name = folderName;
+	}
+
+	private static final byte [] treeWordBytes = { 't', 'r', 'e', 'e', ' ' };
 
 	@Override
-	public String reSave()
+	protected byte [] reSave()
 	{
-		// TODO Auto-generated method stub
-		return "0";
+		try
+		{
+			ByteArrayOutputStream stream = new ByteArrayOutputStream();
+			for (Commitable thing : thingsInTree)
+			{
+				//mode<space>name<null>hexHash
+				stream.write(Integer.toString(thing.mode).getBytes());
+				stream.write(' ');
+				stream.write(thing.name.getBytes());
+				stream.write(0);
+				stream.write(thing.getNewRawHash());
+			}
+			//length+tree<space>+length integer+nullbyte
+			ByteArrayOutputStream prependStream = new ByteArrayOutputStream(stream.size() + ("tree " + stream.size()).length() + 1);
+			prependStream.write(treeWordBytes, 0, treeWordBytes.length);
+			prependStream.write(Integer.toString(stream.size()).getBytes());
+			prependStream.write(0);
+			prependStream.write(stream.toByteArray());
+			byte [] finalContents = prependStream.toByteArray();
+			byte [] newHash = Util.digestToBytes(finalContents);
+			saveFileFromHash(Hex.encodeHexString(newHash), finalContents);
+			return newHash;
+		}
+		catch (IOException e)
+		{
+			e.printStackTrace();
+			return null;
+		}
 	}
 
-	@Override
-	public String getNewHash()
+	public static Tree getTree(String commitNumber)
 	{
-		// TODO Auto-generated method stub
-		return "0";
+		if (oldTrees.containsKey(commitNumber))
+		{
+			return oldTrees.get(commitNumber);
+		}
+		else
+		{
+			return new Tree(commitNumber);
+		}
 	}
 
-	@Override
-	public String getOldHash()
+	public static Tree getTree(String commitNumber, String folderName)
 	{
-		// TODO Auto-generated method stub
-		return null;
+		if (oldTrees.containsKey(commitNumber))
+		{
+			return oldTrees.get(commitNumber);
+		}
+		else
+		{
+			return new Tree(commitNumber, folderName);
+		}
 	}
-
 }

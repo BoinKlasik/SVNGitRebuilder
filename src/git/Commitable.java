@@ -2,11 +2,24 @@ package git;
 
 public abstract class Commitable extends GitObject
 {
+	protected String name;
+	protected int mode;
+
 	protected Commitable(String commitNumber)
 	{
 		super(commitNumber);
 	}
 
+	public String getName()
+	{
+		return name;
+	}
+
+	public int getMode()
+	{
+		return mode;
+	}
+
 	@Override
-	public abstract String reSave();
+	protected abstract byte [] reSave();
 }

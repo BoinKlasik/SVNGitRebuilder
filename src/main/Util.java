@@ -29,14 +29,14 @@ public class Util
 		}
 	}
 
-	public static String digest(String s)
+	public static byte [] digestToBytes(byte [] s)
 	{
-		return Hex.encodeHexString(SHA1_DIGEST.digest(s.getBytes()));
+		return SHA1_DIGEST.digest(s);
 	}
 
-	public static String digest(ByteArrayOutputStream s)
+	public static String digestToString(ByteArrayOutputStream s)
 	{
-		return digest(s.toString());
+		return Hex.encodeHexString(digestToBytes(s.toByteArray()));
 	}
 
 	public static String digestObjectFile(File f) throws IOException
@@ -46,8 +46,7 @@ public class Util
 
 		IOUtils.copy(in, out);
 
-		return Util.digest(out);
-
+		return Util.digestToString(out);
 	}
 
 	public static boolean validHash(String h)

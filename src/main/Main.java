@@ -1,5 +1,6 @@
 package main;
 
+import git.Blob;
 import git.Commit;
 
 import java.io.File;
@@ -24,21 +25,15 @@ public class Main
 	 */
 	public static void main(String [] args) throws IOException, InterruptedException
 	{
-		if (args.length < 3)
+		loadKnownExtensions();
+		if (args.length < 2)
 		{
 			usage();
 			return;
 		}
 
-		if (!Util.validHash(args[0]))
-		{
-			System.out.println("invalid SHA1 hash provided");
-			return;
-		}
-
-		String firstHash = args[0];
-		sourceRepo = args[1];
-		targetRepo = args[2];
+		sourceRepo = args[0];
+		targetRepo = args[1];
 
 		Runtime time = Runtime.getRuntime();
 		//this ensures that .git/info/refs file exists (easier than traversing the whole damn .git/refs folder
@@ -60,18 +55,32 @@ public class Main
 			}
 		}
 		System.out.println(leaves);
-		for (String hash : leaves)
+		try
 		{
-			String newHash = Commit.getCommit(hash).getNewHash();
-			System.out.println(newHash);
+			for (String hash : leaves)
+			{
+				String newHash = Commit.getCommit(hash).getNewHash();
+				System.out.println(newHash);
+			}
+			System.out.println("Loaded " + Commit.oldCommits.size() + " commits total");
 		}
-		System.out.println("Loaded " + Commit.oldCommits.size() + " commits total");
+		catch (Exception e)
+		{
+			e.printStackTrace();
+		}
+		System.out.println("binary files: " + Blob.binaryExtensions);
+		System.out.println("known files: " + Blob.knownExtensions);
+	}
+
+	private static void loadKnownExtensions()
+	{
+		// TODO Auto-generated method stub
+
 	}
 
 	private static void usage()
 	{
-		System.out.println("1) Full name of a root commit as an argument.");
-		System.out.println("2) Path to source repo");
-		System.out.println("3) Path to target repo");
+		System.out.println("1) Path to source repo");
+		System.out.println("2) Path to target repo");
 	}
 }

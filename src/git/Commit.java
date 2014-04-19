@@ -8,6 +8,8 @@ import java.util.List;
 import main.Main;
 import main.Util;
 
+import org.apache.commons.codec.binary.Hex;
+
 public class Commit extends GitObject
 {
 	public static HashMap<String, Commit> oldCommits = new HashMap<String, Commit>();
@@ -17,7 +19,6 @@ public class Commit extends GitObject
 	private Tree tree;
 	private List<Commit> parents;
 	private String footer;
-	private String newCommitNumber;
 
 	//@formatter:off
 	/**
@@ -80,15 +81,21 @@ public class Commit extends GitObject
 	}
 
 	@Override
-	protected String reSave()
+	protected byte [] reSave()
 	{
 		StringBuilder sb = new StringBuilder();
-		String newTreeHash = tree.reSave();
+		String newTreeHash = tree.getNewHash();
 		String [] newParentHashes = new String [parents.size()];
 		for (int i = 0; i < parents.size(); i++)
 		{
-			String string = parents.get(i).getNewHash();
-			newParentHashes[i] = string;
+			try
+			{
+				newParentHashes[i] = parents.get(i).getNewHash();
+			}
+			catch (NullPointerException e)
+			{
+				e.printStackTrace();
+			}
 		}
 		sb.append("tree " + newTreeHash + "\n");
 		for (String s : newParentHashes)
@@ -98,29 +105,20 @@ public class Commit extends GitObject
 		sb.append(footer);
 		sb.insert(0, "commit " + sb.length() + '\0');
 		String newCommitContents = sb.toString();
-		String newHash = Util.digest(newCommitContents);
-		System.out.println(oldCommitNumber + " -> " + newHash);
+		byte [] newHash = Util.digestToBytes(newCommitContents.getBytes());
+		System.out.println(oldCommitNumber + " -> " + Hex.encodeHexString(newHash));
 		if (Main.leaves.contains(oldCommitNumber))
 		{
 			System.out.println(newCommitContents);
 		}
-		//saveFileFromHash(newHash, newCommitContents);
-		return newHash;
-	}
-
-	@Override
-	public String getNewHash()
-	{
-		if (newCommitNumber == null)
+		try
 		{
-			newCommitNumber = reSave();
+			saveFileFromHash(Hex.encodeHexString(newHash), newCommitContents.getBytes());
 		}
-		return newCommitNumber;
-	}
-
-	@Override
-	public String getOldHash()
-	{
-		return oldCommitNumber;
+		catch (IOException e)
+		{
+			e.printStackTrace();
+		}
+		return newHashRaw;
 	}
 }

@@ -66,7 +66,7 @@ public class Blob extends Commitable
 			else
 			{
 				String fileLines = loadFileFromHash(oldCommitNumber);
-				replace = fileLines.replace("\r\n", "\n");
+				fileLines = fileLines.replace("\r\n", "\n");
 				resultBytes = fileLines.getBytes();
 			}
 			byte [] newHash = Util.digestToBytes(resultBytes);

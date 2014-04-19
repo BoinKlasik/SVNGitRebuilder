@@ -22,7 +22,7 @@ public class Main
 
 	/**
 	 * git update-server-info is required to ennsure .git/info/refs file exists
-	 *
+	 * 
 	 * @param args
 	 * @throws IOException
 	 * @throws InterruptedException
@@ -38,7 +38,7 @@ public class Main
 		sourceRepo = args[0];
 		targetRepo = args[1];
 
-		if (args.length > 3)
+		if (args.length > 2)
 		{
 			loadKnownExtensions(args[2]);
 		}

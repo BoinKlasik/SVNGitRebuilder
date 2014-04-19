@@ -119,6 +119,6 @@ public class Commit extends GitObject
 		{
 			e.printStackTrace();
 		}
-		return newHashRaw;
+		return newHash;
 	}
 }

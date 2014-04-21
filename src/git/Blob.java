@@ -66,8 +66,10 @@ public class Blob extends Commitable
 			else
 			{
 				String fileLines = loadFileFromHash(oldCommitNumber);
+				fileLines = fileLines.substring(fileLines.indexOf('\0') + 1);
 				fileLines = fileLines.replace("\r\n", "\n");
-				resultBytes = fileLines.getBytes();
+				String headerPlus = "blob " + fileLines.length() + "\0" + fileLines;
+				resultBytes = headerPlus.getBytes();
 			}
 			byte [] newHash = Util.digestToBytes(resultBytes);
 			saveFileFromHash(Hex.encodeHexString(newHash), resultBytes);

@@ -107,7 +107,7 @@ public class Commit extends GitObject
 		String newCommitContents = sb.toString();
 		byte [] newHash = Util.digestToBytes(newCommitContents.getBytes());
 		System.out.println(oldCommitNumber + " -> " + Hex.encodeHexString(newHash));
-		if (Main.leaves.contains(oldCommitNumber))
+		if (Main.leaves.containsValue(oldCommitNumber))
 		{
 			System.out.println(newCommitContents);
 		}

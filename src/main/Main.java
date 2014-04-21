@@ -7,8 +7,9 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Properties;
 
@@ -18,7 +19,7 @@ public class Main
 {
 	public static String sourceRepo;
 	public static String targetRepo;
-	public static List<String> leaves;
+	public static Map<String, String> leaves;
 
 	/**
 	 * git update-server-info is required to ennsure .git/info/refs file exists
@@ -48,7 +49,7 @@ public class Main
 		time.exec("git update-server-info", null, new File(sourceRepo)).waitFor();
 
 		List<String> lines = FileUtils.readLines(new File(sourceRepo + "/.git/info/refs"), "UTF-8");
-		leaves = new ArrayList<>();
+		leaves = new HashMap<>();
 		for (String line : lines)
 		{
 			//tags dont hold up the git tree
@@ -57,15 +58,16 @@ public class Main
 				continue;
 			}
 			String hash = line.substring(0, 40);
-			if (!leaves.contains(hash))
+			String branchName = line.substring(line.indexOf('\t') + 1);
+			if (!leaves.containsKey(branchName))
 			{
-				leaves.add(hash);
+				leaves.put(branchName, hash);
 			}
 		}
 		System.out.println(leaves);
 		try
 		{
-			for (String hash : leaves)
+			for (String hash : leaves.values())
 			{
 				String newHash = Commit.getCommit(hash).getNewHash();
 				System.out.println(newHash);
@@ -76,8 +78,23 @@ public class Main
 		{
 			e.printStackTrace();
 		}
+		for (Entry<String, String> hash : leaves.entrySet())
+		{
+			System.out.println(hash.getKey() + " : " + Commit.getCommit(hash.getValue()).getNewHash());
+			writeNewRefFile(hash.getKey(), hash.getValue());
+		}
 		System.out.println("binary files: " + Blob.binaryExtensions);
 		System.out.println("known files: " + Blob.knownExtensions);
+	}
+
+	private static void writeNewRefFile(String path, String hash) throws IOException
+	{
+		File f = new File(targetRepo + "/.git/" + path);
+		if (!f.getParentFile().exists() && !f.getParentFile().mkdirs())
+		{
+			throw new IOException("Unable to create " + f.getParentFile());
+		}
+		FileUtils.write(f, hash);
 	}
 
 	private static void loadKnownExtensions(String propertiesFile)

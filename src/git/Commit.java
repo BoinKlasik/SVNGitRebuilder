@@ -64,8 +64,6 @@ public class Commit extends GitObject
 			remainder.append(splitString[i] + "\n");
 		}
 		footer = remainder.toString();
-
-		System.out.println("Loaded Commit: " + commitNumber);
 	}
 
 	public static Commit getCommit(String commitNumber)

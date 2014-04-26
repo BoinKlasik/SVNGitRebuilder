@@ -5,6 +5,7 @@ import git.Commit;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.HashMap;
@@ -44,6 +45,56 @@ public class Main
 			loadKnownExtensions(args[2]);
 		}
 
+		getSourceRepoLeaves();
+
+		try
+		{
+			for (String hash : leaves.values())
+			{
+				String newHash = Commit.getCommit(hash).getNewHash();
+				System.out.println(newHash);
+			}
+			System.out.println("Loaded " + Commit.oldCommits.size() + " commits total");
+		}
+		catch (Exception e)
+		{
+			e.printStackTrace();
+		}
+		for (Entry<String, String> hash : leaves.entrySet())
+		{
+			System.out.println(hash.getKey() + " : " + Commit.getCommit(hash.getValue()).getNewHash());
+			writeNewRefFile(hash.getKey(), Commit.getCommit(hash.getValue()).getNewHash());
+		}
+		System.out.println("binary files: " + Blob.binaryExtensions);
+		System.out.println("known files: " + Blob.knownExtensions);
+		saveProperties();
+	}
+
+	private static void saveProperties() throws IOException
+	{
+		FileOutputStream stream = new FileOutputStream("extensions.prop");
+		Properties prop = new Properties();
+		for (String known : Blob.knownExtensions)
+		{
+			String type = "ascii";
+			if (Blob.binaryExtensions.contains(known))
+			{
+				type = "binary";
+			}
+			prop.put(known, type);
+		}
+		prop.store(stream, "Known GitRebuilder file extensions.");
+	}
+
+	/**
+	 * reads the sourcerepo directory and calls "git update-server-info" which pulls the info/refs file which contains an easy listing of all branches currently
+	 * in the system. This file is processed for everything that isnt a tag (tags cant hold up the tree).
+	 * 
+	 * @throws InterruptedException
+	 * @throws IOException
+	 */
+	private static void getSourceRepoLeaves() throws InterruptedException, IOException
+	{
 		Runtime time = Runtime.getRuntime();
 		//this ensures that .git/info/refs file exists (easier than traversing the whole damn .git/refs folder
 		time.exec("git update-server-info", null, new File(sourceRepo)).waitFor();
@@ -65,28 +116,15 @@ public class Main
 			}
 		}
 		System.out.println(leaves);
-		try
-		{
-			for (String hash : leaves.values())
-			{
-				String newHash = Commit.getCommit(hash).getNewHash();
-				System.out.println(newHash);
-			}
-			System.out.println("Loaded " + Commit.oldCommits.size() + " commits total");
-		}
-		catch (Exception e)
-		{
-			e.printStackTrace();
-		}
-		for (Entry<String, String> hash : leaves.entrySet())
-		{
-			System.out.println(hash.getKey() + " : " + Commit.getCommit(hash.getValue()).getNewHash());
-			writeNewRefFile(hash.getKey(), hash.getValue());
-		}
-		System.out.println("binary files: " + Blob.binaryExtensions);
-		System.out.println("known files: " + Blob.knownExtensions);
 	}
 
+	/**
+	 * This method writes all the old branches out to your .git/refs/<whatever> folder allowing git to "see" all the new branches that were created.
+	 * 
+	 * @param path
+	 * @param hash
+	 * @throws IOException
+	 */
 	private static void writeNewRefFile(String path, String hash) throws IOException
 	{
 		File f = new File(targetRepo + "/.git/" + path);

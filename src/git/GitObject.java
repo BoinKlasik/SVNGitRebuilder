@@ -28,7 +28,7 @@ public abstract class GitObject
 		this.oldCommitNumber = commitNumber;
 		if (!Util.validHash(commitNumber))
 		{
-			throw new RuntimeException("Invalid hash: " + commitNumber);
+			throw new RuntimeException("Invalid hash: \'" + commitNumber + "\'");
 		}
 	}
 

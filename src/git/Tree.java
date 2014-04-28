@@ -22,13 +22,9 @@ public class Tree extends Commitable
 	/*
 	 * tree 500\0<mode> <filename>\0hash{20}mode...
 	 */
-	public Tree(String commitNumber)
+	private Tree(String commitNumber)
 	{
 		super(commitNumber);
-		if (commitNumber.equals("e18de54072dd6ee7f717ca6166ad0a7c51677ea5"))
-		{
-			System.out.println("lksjaerlyjasdlkjrasd");
-		}
 		thingsInTree = new LinkedHashMap<>();
 		mode = TREE_MODE; //trees are always mode 40000 unless they are commit Trees (which will never reference this number)
 		oldTrees.put(commitNumber, this);
@@ -59,10 +55,6 @@ public class Tree extends Commitable
 			readPosition = byteWrapper.indexOf('\0', spacePosition);
 			String name = new String(byteWrapper.subBytes(spacePosition + 1, readPosition));
 			byte [] hashCode = byteWrapper.subBytes(readPosition + 1, readPosition + 21);
-			if (commitNumber.equals("e18de54072dd6ee7f717ca6166ad0a7c51677ea5"))
-			{
-				System.out.println("boogieboo");
-			}
 
 			String hashString = new String(Hex.encodeHex(hashCode));
 			if (commitableMode == TREE_MODE)

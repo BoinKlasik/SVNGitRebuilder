@@ -88,7 +88,7 @@ public class Main
 
 	/**
 	 * reads the sourcerepo directory and calls "git update-server-info" which pulls the info/refs file which contains an easy listing of all branches currently
-	 * in the system. This file is processed for everything that isnt a tag (tags cant hold up the tree).
+	 * in the system. This file is processed for everything that isnt a tag.
 	 * 
 	 * @throws InterruptedException
 	 * @throws IOException
@@ -104,12 +104,13 @@ public class Main
 		for (String line : lines)
 		{
 			//tags dont hold up the git tree
-			if (line.contains("tags"))
-			{
-				continue;
-			}
+
 			String hash = line.substring(0, 40);
 			String branchName = line.substring(line.indexOf('\t') + 1);
+			if (line.contains("remote"))
+			{
+				line = line.replace("remotes", "heads/remotes");
+			}
 			if (!leaves.containsKey(branchName))
 			{
 				leaves.put(branchName, hash);
@@ -127,6 +128,11 @@ public class Main
 	 */
 	private static void writeNewRefFile(String path, String hash) throws IOException
 	{
+		//whacky "tag commit" name endings.
+		if (path.endsWith("^{}"))
+		{
+			return;
+		}
 		File f = new File(targetRepo + "/.git/" + path);
 		if (!f.getParentFile().exists() && !f.getParentFile().mkdirs())
 		{

@@ -16,9 +16,10 @@ public class Commit extends GitObject
 	//do we need this?
 	public static HashMap<Commit, Commit> oldToNewCommits = new HashMap<Commit, Commit>();
 
-	private Tree tree;
+	private GitObject object;
 	private List<Commit> parents;
 	private String footer;
+	private String treeOrObject;
 
 	//@formatter:off
 	/**
@@ -50,8 +51,22 @@ public class Commit extends GitObject
 		}
 		String [] splitString = commitString.split("\n");
 
-		int startOfHash = commitString.indexOf('\0') + 6;
-		tree = new Tree(splitString[0].substring(startOfHash));
+		int startOfTreeOrObject = commitString.indexOf('\0');
+		int startOfHash = commitString.indexOf(' ', startOfTreeOrObject);
+		treeOrObject = commitString.substring(startOfTreeOrObject + 1, startOfHash);
+		String treeOrObjectHash = splitString[0].substring(startOfHash + 1);
+		if (treeOrObject.equals("tree"))
+		{
+			object = Tree.getTree(treeOrObjectHash);
+		}
+		else if (treeOrObject.equals("object"))
+		{
+			object = Commit.getCommit(treeOrObjectHash);
+		}
+		else
+		{
+			throw new RuntimeException("Commit did not contain a tree or an object");
+		}
 		int parentsIndex = 1;
 		while (splitString[parentsIndex].startsWith("parent"))
 		{
@@ -82,7 +97,7 @@ public class Commit extends GitObject
 	protected byte [] reSave()
 	{
 		StringBuilder sb = new StringBuilder();
-		String newTreeHash = tree.getNewHash();
+		String newTreeHash = object.getNewHash();
 		String [] newParentHashes = new String [parents.size()];
 		for (int i = 0; i < parents.size(); i++)
 		{
@@ -95,13 +110,21 @@ public class Commit extends GitObject
 				e.printStackTrace();
 			}
 		}
-		sb.append("tree " + newTreeHash + "\n");
+		sb.append(treeOrObject + " " + newTreeHash + "\n");
 		for (String s : newParentHashes)
 		{
 			sb.append("parent " + s + "\n");
 		}
 		sb.append(footer);
-		sb.insert(0, "commit " + sb.length() + '\0');
+		//TODO: actually make a Tag class for gods sake.
+		if (treeOrObject.equals("object"))
+		{
+			sb.insert(0, "tag " + sb.length() + '\0');
+		}
+		else
+		{
+			sb.insert(0, "commit " + sb.length() + '\0');
+		}
 		String newCommitContents = sb.toString();
 		byte [] newHash = Util.digestToBytes(newCommitContents.getBytes());
 		System.out.println(oldCommitNumber + " -> " + Hex.encodeHexString(newHash));

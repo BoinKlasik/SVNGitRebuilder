@@ -40,11 +40,9 @@ public class Main
 		sourceRepo = args[0];
 		targetRepo = args[1];
 
-		if (args.length > 2)
-		{
-			loadKnownExtensions(args[2]);
-		}
+		loadKnownExtensions();
 
+		createTargetRepo();
 		getSourceRepoLeaves();
 
 		try
@@ -68,6 +66,21 @@ public class Main
 		System.out.println("binary files: " + Blob.binaryExtensions);
 		System.out.println("known files: " + Blob.knownExtensions);
 		saveProperties();
+	}
+
+	/**
+	 * inits a git repository in the target directory iff there isnt already a .git folder.
+	 * 
+	 * @throws InterruptedException
+	 * @throws IOException
+	 */
+	private static void createTargetRepo() throws InterruptedException, IOException
+	{
+		if (!new File(targetRepo + "/.git").exists())
+		{
+			Runtime time = Runtime.getRuntime();
+			time.exec("git init", null, new File(targetRepo)).waitFor();
+		}
 	}
 
 	private static void saveProperties() throws IOException
@@ -103,14 +116,13 @@ public class Main
 		leaves = new HashMap<>();
 		for (String line : lines)
 		{
-			//tags dont hold up the git tree
-
-			String hash = line.substring(0, 40);
-			String branchName = line.substring(line.indexOf('\t') + 1);
 			if (line.contains("remote"))
 			{
 				line = line.replace("remotes", "heads/remotes");
 			}
+
+			String hash = line.substring(0, 40);
+			String branchName = line.substring(line.indexOf('\t') + 1);
 			if (!leaves.containsKey(branchName))
 			{
 				leaves.put(branchName, hash);
@@ -141,29 +153,32 @@ public class Main
 		FileUtils.write(f, hash);
 	}
 
-	private static void loadKnownExtensions(String propertiesFile)
+	private static void loadKnownExtensions()
 	{
-		final File f = new File(propertiesFile);
-		final Properties props = new Properties();
+		final File f = new File("extensions.prop");
 
-		try (InputStream in = new FileInputStream(f))
+		if (f.exists())
 		{
-			props.load(in);
-		}
-		catch (IOException e)
-		{
-			e.printStackTrace();
-			System.exit(1);
-			return;
-		}
-
-		for (Entry<Object, Object> entry : props.entrySet())
-		{
-			Blob.knownExtensions.add(entry.getKey().toString());
-
-			if (entry.getValue().equals("binary"))
+			final Properties props = new Properties();
+			try (InputStream in = new FileInputStream(f))
 			{
-				Blob.binaryExtensions.add(entry.getKey().toString());
+				props.load(in);
+			}
+			catch (IOException e)
+			{
+				e.printStackTrace();
+				System.exit(1);
+				return;
+			}
+
+			for (Entry<Object, Object> entry : props.entrySet())
+			{
+				Blob.knownExtensions.add(entry.getKey().toString());
+
+				if (entry.getValue().equals("binary"))
+				{
+					Blob.binaryExtensions.add(entry.getKey().toString());
+				}
 			}
 		}
 	}

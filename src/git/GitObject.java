@@ -17,6 +17,8 @@ import main.Util;
 import org.apache.commons.codec.binary.Hex;
 import org.apache.commons.io.IOUtils;
 
+import exceptions.HashNotFoundException;
+
 public abstract class GitObject
 {
 	protected String oldCommitNumber;
@@ -73,6 +75,10 @@ public abstract class GitObject
 	protected static byte [] loadBytesfromHash(String commitNum) throws IOException
 	{
 		File f = new File(getSourcePath(commitNum));
+		if (!f.exists())
+		{
+			throw new HashNotFoundException("Could not find file from hash: " + commitNum + ".  Did you forget to unpack the pack files?");
+		}
 		final InputStream in = new InflaterInputStream(new FileInputStream(f));
 		final ByteArrayOutputStream out = new ByteArrayOutputStream();
 

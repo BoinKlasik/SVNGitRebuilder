@@ -69,13 +69,19 @@ public class Main
 	}
 
 	/**
-	 * inits a git repository in the target directory iff there isnt already a .git folder.
+	 * inits a git repository in the target directory iff there isnt already a .git folder. Also creates the target directory itself if it doesnt exist.
 	 * 
 	 * @throws InterruptedException
 	 * @throws IOException
 	 */
 	private static void createTargetRepo() throws InterruptedException, IOException
 	{
+		File targetRepoFile = new File(targetRepo);
+		if (!targetRepoFile.exists())
+		{
+			targetRepoFile.mkdirs();
+		}
+
 		if (!new File(targetRepo + "/.git").exists())
 		{
 			Runtime time = Runtime.getRuntime();

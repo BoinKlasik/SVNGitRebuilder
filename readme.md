@@ -12,6 +12,6 @@ While a patch should be made to git svn clone (a future project hopefully) this 
 
 3) This tool effectively acts as an extremly agressive history rewrite so basically every single commit will have new hashes and will need to be force pushed to origin (if applicable)
 
-4) Branches only tracked by origin will be rewritten as oldRemites/<oldbranchname> since the new repository will not have any remotes setup they are all converted to local branches.
+4) Branches only tracked by origin will be rewritten as oldRemotes/<oldbranchname> since the new repository will not have any remotes setup they are all converted to local branches.
 
 5) git regularly "packs" the repository in a compressed file located in .git/objects/pack. For this tool to work correctly all pack files must be MOVED (not copied out of the .git folder (but still in the repo, im not sure they work outside of there) and should be extracted with 'git unpack-objects < packfile'. This cuases the pack to be decompressed to its individual files in .git/objects.  If this is not performed, the tool will crash with an error mentioning that it could not find a specific hash file.
